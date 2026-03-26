@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "scheme": "tugasku",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash2.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },

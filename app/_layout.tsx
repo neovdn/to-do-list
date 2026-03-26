@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import * as SplashScreen from 'expo-splash-screen'; // 1. Import library splash screen
+import { View, StyleSheet } from 'react-native';
+// Hapus import expo-splash-screen karena kita pakai cara manual
+// import * as SplashScreen from 'expo-splash-screen'; 
 import { getUser } from '@/utils/storage';
 import { Colors } from '@/constants/theme';
-
-// Mencegah Splash Screen tertutup otomatis agar kita bisa kontrol durasinya
-SplashScreen.preventAutoHideAsync();
+// Import FakeSplashScreen yang baru kita buat
+import FakeSplashScreen from '@/components/FakeSplashScreen'; 
+import { LogBox } from 'react-native';
+LogBox.ignoreLogs(['expo-notifications']);
 
 interface AppContextType {
   completeOnboarding: () => void;
@@ -27,30 +29,29 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
 
-  // Inisialisasi data dan pengaturan Splash Screen
+  // 1. Logika Pemuatan Data (Fake Splash Screen)
   useEffect(() => {
-    async function prepare() {
+    async function prepareData() {
       try {
-        // Cek status user dari storage
+        // Cek status user dari storage (proses asli)
         const user = await getUser();
         setIsOnboarded(!!user?.onboarded);
         
-        // BERI JEDA: Menahan splash screen selama 2 detik agar estetikanya terlihat
+        // BERI JEDA: Kita tahan Fake Splash selama 3 detik
         await new Promise(resolve => setTimeout(resolve, 3000));
         
       } catch (e) {
-        console.warn("Gagal memuat status onboarding:", e);
+        console.warn("Gagal memuat data:", e);
       } finally {
-        // Tandai aplikasi siap dan sembunyikan Splash Screen
+        // Tandai aplikasi siap, Fake Splash akan hilang otomatis
         setIsReady(true);
-        await SplashScreen.hideAsync();
       }
     }
 
-    prepare();
+    prepareData();
   }, []);
 
-  // Penjaga Pintu Navigasi
+  // 2. Penjaga Pintu Navigasi (Sama seperti sebelumnya)
   useEffect(() => {
     if (!isReady) return;
 
@@ -71,38 +72,34 @@ export default function RootLayout() {
     setIsOnboarded(false);
   }, []);
 
-  // Tampilan fallback (Loading Spinner) jika splash screen sudah hilang tapi navigasi belum selesai
-  if (!isReady) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <StatusBar style="dark" />
-      </View>
-    );
-  }
-
   return (
     <AppContext.Provider value={{ completeOnboarding, resetOnboarding }}>
+      {/* StatusBar Utama Aplikasi */}
       <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: Colors.background },
-          animation: 'slide_from_right',
-        }}
-      >
-        <Stack.Screen name="(onboarding)" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
+      
+      {/* 3. LOGIKA RENDER UTAMA */}
+      <View style={styles.container}>
+        {/* Stack Navigator (Selalu dirender di belakang) */}
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: Colors.background },
+            animation: 'slide_from_right',
+          }}
+        >
+          <Stack.Screen name="(onboarding)" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+
+        {/* Tampilkan Fake SplashScreen DI ATAS Stack jika belum ready */}
+        {!isReady && <FakeSplashScreen />}
+      </View>
     </AppContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
+  container: {
+    flex: 1, // Pastikan container utama full screen
   },
 });
