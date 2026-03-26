@@ -18,9 +18,10 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/icon.png" 
+        "foregroundImage": "./assets/icon.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.neovidean.tugasku"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -28,7 +29,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-splash-screen", 
+      "expo-splash-screen",
       "@react-native-community/datetimepicker",
       [
         "expo-notifications",
@@ -37,6 +38,12 @@
           "color": "#7C5CFC"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "df19f7ac-48e2-4ec9-90b3-5aa160d4a5e5"
+      }
+    }
   }
 }

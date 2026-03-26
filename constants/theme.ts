@@ -65,6 +65,13 @@ export const FontSize = {
 };
 
 export const Shadows = {
+  none: {
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
   sm: {
     shadowColor: '#7C5CFC',
     shadowOffset: { width: 0, height: 2 },
