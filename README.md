@@ -15,16 +15,18 @@ Berikut adalah visualisasi dari alur penggunaan aplikasi beserta penjelasan fung
 
 ### 1. Sistem Onboarding (Pengguna Baru)
 
-![Tampilan Welcome Screen]
-![Gambar Onboarding](welcome.jpeg)
+<p align="center">
+  <img src="welcome.jpeg" width="280" alt="Tampilan Welcome Screen - Onboarding">
+</p>
 
 * **Layar Sapaan:** Layar pertama yang muncul saat aplikasi dibuka pertama kali oleh pengguna baru, memberikan kesan *branding* yang kuat.
 * **Form Input:** Pengguna akan diminta mengisi nama dan memilih kategori tugas untuk kustomisasi Dashboard.
 
 ### 2. Dashboard Utama & Manajemen Tugas
 
-![Tampilan Dashboard dan Tambah Tugas]
-![Tampilan Utama](dasboard.jpeg)
+<p align="center">
+  <img src="dasboard.jpeg" width="280" alt="Tampilan Dashboard Utama dan Tambah Tugas">
+</p>
 
 * **Daftar Tugas:** Menampilkan semua tugas yang telah dibuat. Status tugas (Selesai/Belum Selesai) terlihat jelas.
 * **Tambah Tugas:** Tombol + untuk membuka form guna menambah tugas baru secara instan. Data langsung tersimpan di HP.
@@ -39,15 +41,15 @@ Proyek ini dibangun menggunakan framework **Expo (React Native)** dengan arsitek
 Folder ini adalah inti dari aplikasi, tempat semua halaman (layar) diatur.
 * **`_layout.tsx`**: File gerbang utama aplikasi. Di sini kami mengatur transisi *Splash Screen*, tema keseluruhan, dan logika pengecekan apakah user baru pertama kali membuka aplikasi atau sudah pernah login.
 * **`(onboarding)/`**: Folder berisi layar perkenalan untuk pengguna baru.
-  * `welcome.tsx`: Layar sapaan pertama.
-  * `name.tsx`: Layar untuk meminta input nama pengguna.
-  * `level.tsx`: Layar untuk memilih tingkat/kategori pendidikan pengguna.
-  * `ready.tsx`: Layar konfirmasi sebelum masuk ke aplikasi utama.
-  * `_layout.tsx`: Pengatur transisi khusus untuk area onboarding.
+  * `welcome.tsx`: Layar sapaan pertama.
+  * `name.tsx`: Layar untuk meminta input nama pengguna.
+  * `level.tsx`: Layar untuk memilih tingkat/kategori pendidikan pengguna.
+  * `ready.tsx`: Layar konfirmasi sebelum masuk ke aplikasi utama.
+  * `_layout.tsx`: Pengatur transisi khusus untuk area onboarding.
 * **`(tabs)/`**: Folder berisi menu utama aplikasi yang berada di bagian bawah layar (Bottom Tabs).
-  * `index.tsx`: Halaman **Dashboard/Beranda**, tempat daftar tugas (to-do list) ditampilkan.
-  * `add-task.tsx`: Halaman form untuk **menambah tugas baru**.
-  * `_layout.tsx`: Pengatur tampilan tab menu bawah.
+  * `index.tsx`: Halaman **Dashboard/Beranda**, tempat daftar tugas (to-do list) ditampilkan.
+  * `add-task.tsx`: Halaman form untuk **menambah tugas baru**.
+  * `_layout.tsx`: Pengatur tampilan tab menu bawah.
 
 ### 2. Folder `components/` (Elemen Visual)
 Folder ini berisi potongan-potongan desain (komponen) yang bisa dipakai berulang kali agar performa aplikasi lebih ringan.
@@ -67,3 +69,4 @@ Berisi file logika di belakang layar.
 * *(File storage)*: Pengatur sistem simpan data secara lokal di HP pengguna.
 
 ---
+**Developed by: Codevela (@codevela.id)**
