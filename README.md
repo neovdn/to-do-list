@@ -15,8 +15,8 @@ Berikut adalah visualisasi dari alur penggunaan aplikasi beserta penjelasan fung
 
 ### 1. Sistem Onboarding (Pengguna Baru)
 
-![Tampilan Welcome Screen](screenshots/sc_welcome.png)
-![alt text](image.png)
+![Tampilan Welcome Screen]
+![Gambar Onboarding](welcome.jpeg)
 
 * **Layar Sapaan:** Layar pertama yang muncul saat aplikasi dibuka pertama kali oleh pengguna baru, memberikan kesan *branding* yang kuat.
 * **Form Input:** Pengguna akan diminta mengisi nama dan memilih kategori tugas untuk kustomisasi Dashboard.
@@ -24,7 +24,7 @@ Berikut adalah visualisasi dari alur penggunaan aplikasi beserta penjelasan fung
 ### 2. Dashboard Utama & Manajemen Tugas
 
 ![Tampilan Dashboard dan Tambah Tugas]
-![alt text](dasboard.jpeg)
+![Tampilan Utama](dasboard.jpeg)
 
 * **Daftar Tugas:** Menampilkan semua tugas yang telah dibuat. Status tugas (Selesai/Belum Selesai) terlihat jelas.
 * **Tambah Tugas:** Tombol + untuk membuka form guna menambah tugas baru secara instan. Data langsung tersimpan di HP.
