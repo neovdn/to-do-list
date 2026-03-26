@@ -7,23 +7,29 @@ import {
   StyleSheet,
   Alert,
   RefreshControl,
+  StatusBar,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getUser, getTasks, updateTask, deleteTask, UserProfile, Task } from '@/utils/storage';
+
+import { useAppContext } from '@/app/_layout';
+import { getUser, getTasks, updateTask, deleteTask, logoutLocal, UserProfile, Task } from '@/utils/storage';
 import { cancelTaskReminder } from '@/utils/notifications';
 import TaskCard from '@/components/TaskCard';
 import EmptyState from '@/components/EmptyState';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const context = useAppContext(); // Memanggil "otak" aplikasi
+  
   const [user, setUser] = useState<UserProfile | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showCompleted, setShowCompleted] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  // --- LOGIKA DATA ---
   useFocusEffect(
     useCallback(() => {
       loadData();
@@ -42,13 +48,41 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }
 
-  // Greeting based on time of day
+  // --- LOGIKA LOGOUT LOKAL (DIPERBARUI) ---
+  async function handleLogout() {
+    Alert.alert(
+      'Keluar Aplikasi',
+      'Yakin ingin keluar? Kamu harus memasukkan data dirimu lagi nanti.',
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Keluar',
+          style: 'destructive',
+          onPress: async () => {
+            // 1. Hapus data lokal di memori HP
+            if (logoutLocal) {
+              await logoutLocal();
+            }
+            
+            // 2. Hapus memori di "Otak" Context agar pintu Welcome terbuka lagi
+            if (context?.resetOnboarding) {
+              context.resetOnboarding();
+            }
+
+            // 3. Lempar langsung ke welcome!
+            router.replace('/(onboarding)/welcome');
+          },
+        },
+      ]
+    );
+  }
+
   function getGreeting(): { text: string; icon: keyof typeof Ionicons.glyphMap } {
     const hour = new Date().getHours();
-    if (hour < 10) return { text: 'Selamat Pagi', icon: 'sunny-outline' };
+    if (hour < 10) return { text: 'Selamat Pagi', icon: 'sunny' };
     if (hour < 15) return { text: 'Selamat Siang', icon: 'sunny' };
-    if (hour < 18) return { text: 'Selamat Sore', icon: 'partly-sunny-outline' };
-    return { text: 'Selamat Malam', icon: 'moon-outline' };
+    if (hour < 18) return { text: 'Selamat Sore', icon: 'partly-sunny' };
+    return { text: 'Selamat Malam', icon: 'moon' };
   }
 
   function getLevelLabel(level: string): string {
@@ -97,105 +131,120 @@ export default function DashboardScreen() {
 
   const greeting = getGreeting();
 
+  // --- HEADER (TOP SECTION + BANNER + FILTER) ---
   const renderHeader = () => (
-    <View style={styles.header}>
-      {/* Greeting */}
-      <View style={styles.greetingRow}>
-        <View style={styles.greetingContent}>
-          <View style={styles.greetingLine}>
-            <Ionicons name={greeting.icon} size={18} color={Colors.amber} style={{ marginRight: 6 }} />
-            <Text style={styles.greeting}>{greeting.text},</Text>
+    <View style={styles.headerContainer}>
+      {/* 1. Header Putih Melengkung */}
+      <View style={styles.topSection}>
+        <View style={styles.greetingRow}>
+          <View style={styles.greetingContent}>
+            <View style={styles.greetingLine}>
+              <Ionicons name={greeting.icon} size={20} color={Colors.amber} style={{ marginRight: 6 }} />
+              <Text style={styles.greeting}>{greeting.text}</Text>
+            </View>
+            <Text style={styles.userName}>{user?.name ? `${user.name} 👋` : 'Hai Teman 👋'}</Text>
+            
+            {user?.level && (
+               <View style={styles.levelBadge}>
+                 <Text style={styles.levelText}>{getLevelLabel(user.level)}</Text>
+               </View>
+            )}
           </View>
-          <Text style={styles.userName}>{user?.name || 'Teman'}</Text>
-          <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>{getLevelLabel(user?.level || '')}</Text>
-          </View>
+          
+          {/* TOMBOL LOGOUT (Avatar yang bisa diklik) */}
+          <TouchableOpacity 
+            style={styles.avatarContainer}
+            onPress={handleLogout}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.avatarEmoji}>
+              {user?.name ? user.name[0].toUpperCase() : '👤'}
+            </Text>
+          </TouchableOpacity>
         </View>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarEmoji}>
-            {user?.name ? user.name[0].toUpperCase() : '?'}
-          </Text>
+
+        {/* 2. Panel Statistik Clean */}
+        <View style={styles.statsPanel}>
+          <View style={styles.statItem}>
+            <View style={[styles.statIconBox, { backgroundColor: Colors.primarySoft }]}>
+              <Ionicons name="document-text" size={20} color={Colors.primary} />
+            </View>
+            <View>
+              <Text style={styles.statNumber}>{activeTasks.length}</Text>
+              <Text style={styles.statLabel}>Aktif</Text>
+            </View>
+          </View>
+          
+          <View style={styles.statDivider} />
+
+          <View style={styles.statItem}>
+            <View style={[styles.statIconBox, { backgroundColor: Colors.mintSoft }]}>
+              <Ionicons name="checkmark-done" size={20} color={Colors.mint} />
+            </View>
+            <View>
+              <Text style={styles.statNumber}>{completedTasks.length}</Text>
+              <Text style={styles.statLabel}>Selesai</Text>
+            </View>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statItem}>
+             <View style={[styles.statIconBox, { backgroundColor: Colors.skySoft }]}>
+              <Ionicons name="apps" size={20} color={Colors.sky} />
+            </View>
+            <View>
+              <Text style={styles.statNumber}>{tasks.length}</Text>
+              <Text style={styles.statLabel}>Total</Text>
+            </View>
+          </View>
         </View>
       </View>
 
-      {/* Stats */}
-      <View style={styles.statsRow}>
-        <View style={[styles.statCard, { backgroundColor: Colors.primarySoft }]}>
-          <Text style={styles.statNumber}>{activeTasks.length}</Text>
-          <Text style={styles.statLabel}>Tugas Aktif</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: Colors.mintSoft }]}>
-          <Text style={styles.statNumber}>{completedTasks.length}</Text>
-          <Text style={styles.statLabel}>Selesai</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: Colors.amberSoft }]}>
-          <Text style={styles.statNumber}>{tasks.length}</Text>
-          <Text style={styles.statLabel}>Total</Text>
-        </View>
-      </View>
-
-      {/* Motivational Banner */}
+      {/* 3. Banner Motivasi Premium */}
       {activeTasks.length > 0 && (
         <View style={styles.motivBanner}>
-          <View style={styles.motivContent}>
-            <Ionicons name="flame-outline" size={18} color={Colors.coral} style={{ marginRight: 6 }} />
-            <Text style={styles.motivText}>
-              Semangat! Kamu punya {activeTasks.length} tugas yang menunggu.
-            </Text>
+          <View style={styles.motivIconWrapper}>
+            <Ionicons name="flame" size={20} color={Colors.white} />
           </View>
+          <Text style={styles.motivText}>
+            Semangat! Ada <Text style={{fontWeight: '800', color: Colors.textPrimary}}>{activeTasks.length} tugas</Text> yang perlu diselesaikan.
+          </Text>
         </View>
       )}
 
-      {/* Filter Tabs */}
-      <View style={styles.filterRow}>
-        <TouchableOpacity
-          style={[styles.filterTab, !showCompleted && styles.filterTabActive]}
-          onPress={() => setShowCompleted(false)}
-        >
-          <View style={styles.filterContent}>
-            <Ionicons
-              name="list-outline"
-              size={15}
-              color={!showCompleted ? Colors.primary : Colors.textMuted}
-              style={{ marginRight: 4 }}
-            />
-            <Text
-              style={[
-                styles.filterText,
-                !showCompleted && styles.filterTextActive,
-              ]}
-            >
+      {/* 4. Filter Tugas (Model Pill) */}
+      <View style={styles.filterContainer}>
+        <Text style={styles.sectionTitle}>Daftar Tugas</Text>
+        
+        <View style={styles.pillContainer}>
+          <TouchableOpacity
+            style={[styles.pill, !showCompleted && styles.pillActive]}
+            onPress={() => setShowCompleted(false)}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.pillText, !showCompleted && styles.pillTextActive]}>
               Aktif ({activeTasks.length})
             </Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterTab, showCompleted && styles.filterTabActive]}
-          onPress={() => setShowCompleted(true)}
-        >
-          <View style={styles.filterContent}>
-            <Ionicons
-              name="checkmark-circle-outline"
-              size={15}
-              color={showCompleted ? Colors.primary : Colors.textMuted}
-              style={{ marginRight: 4 }}
-            />
-            <Text
-              style={[
-                styles.filterText,
-                showCompleted && styles.filterTextActive,
-              ]}
-            >
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.pill, showCompleted && styles.pillActive]}
+            onPress={() => setShowCompleted(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.pillText, showCompleted && styles.pillTextActive]}>
               Selesai ({completedTasks.length})
             </Text>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
       <FlatList
         data={displayTasks}
         keyExtractor={(item) => item.id}
@@ -240,24 +289,39 @@ export default function DashboardScreen() {
   );
 }
 
+// --- STYLE UI PREMIUM ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.background, 
   },
   listContent: {
-    paddingBottom: 100,
+    paddingBottom: 120, 
   },
-  header: {
+  headerContainer: {
+    paddingBottom: Spacing.md,
+  },
+  
+  // -- Top Section (Sapaan & Statistik) --
+  topSection: {
+    backgroundColor: Colors.white,
+    borderBottomLeftRadius: 36, 
+    borderBottomRightRadius: 36,
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.xxl,
+    marginBottom: Spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 15,
+    elevation: 4, 
   },
   greetingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.xxl,
   },
   greetingContent: {
     flex: 1,
@@ -265,114 +329,169 @@ const styles = StyleSheet.create({
   greetingLine: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 4,
   },
   greeting: {
     fontSize: FontSize.md,
     color: Colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   userName: {
-    fontSize: FontSize.xxl,
-    fontWeight: '800',
+    fontSize: 28, 
+    fontWeight: '900', 
     color: Colors.textPrimary,
-    marginTop: 2,
+    letterSpacing: -1,
   },
   levelBadge: {
     backgroundColor: Colors.primarySoft,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: BorderRadius.full,
     alignSelf: 'flex-start',
     marginTop: Spacing.sm,
   },
   levelText: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.primary,
+    textTransform: 'uppercase', 
+    letterSpacing: 1,
   },
   avatarContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 60, 
+    height: 60,
+    borderRadius: 30,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: Colors.primarySoft, 
     ...Shadows.md,
   },
   avatarEmoji: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 26,
     color: Colors.white,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  statCard: {
-    flex: 1,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: FontSize.xxl,
     fontWeight: '800',
-    color: Colors.textPrimary,
   },
-  statLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  motivBanner: {
-    backgroundColor: Colors.coralSoft,
-    borderRadius: BorderRadius.md,
+
+  // -- Stats Panel --
+  statsPanel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.md,
-    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)', 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
   },
-  motivContent: {
+  statItem: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.sm,
+  },
+  statIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statNumber: {
+    fontSize: FontSize.lg,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    lineHeight: 22,
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: Colors.border,
+  },
+
+  // -- Motivational Banner --
+  motivBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.coralSoft,
+    marginHorizontal: Spacing.xl,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    marginBottom: Spacing.xl,
+    ...Shadows.sm,
+  },
+  motivIconWrapper: {
+    backgroundColor: Colors.coral,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
   },
   motivText: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
-    color: Colors.coral,
+    color: Colors.textSecondary,
     flex: 1,
+    lineHeight: 20,
   },
-  filterRow: {
+
+  // -- Filter Area (Pill Design) --
+  filterContainer: {
+    paddingHorizontal: Spacing.xl,
     flexDirection: 'row',
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.md,
-    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: Spacing.md,
-    ...Shadows.sm,
   },
-  filterTab: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    alignItems: 'center',
-    borderRadius: BorderRadius.sm,
+  sectionTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
   },
-  filterTabActive: {
-    backgroundColor: Colors.primarySoft,
-  },
-  filterContent: {
+  pillContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.04)', 
+    borderRadius: BorderRadius.full,
+    padding: 4,
   },
-  filterText: {
-    fontSize: FontSize.sm,
+  pill: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 8, 
+    borderRadius: BorderRadius.full,
+  },
+  pillActive: {
+    backgroundColor: Colors.white,
+    ...Shadows.sm, 
+  },
+  pillText: {
+    fontSize: FontSize.xs,
     fontWeight: '600',
     color: Colors.textMuted,
   },
-  filterTextActive: {
+  pillTextActive: {
     color: Colors.primary,
+    fontWeight: '800',
   },
+
+  // -- Wrapper untuk List Kartu --
   cardWrapper: {
     paddingHorizontal: Spacing.xl,
+    paddingVertical: 4, 
   },
 });

@@ -8,19 +8,17 @@
     "userInterfaceStyle": "light",
     "scheme": "tugasku",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F5F0FF"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#F5F0FF",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/icon.png" 
       },
       "predictiveBackGestureEnabled": false
     },
@@ -30,6 +28,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-splash-screen", 
       "@react-native-community/datetimepicker",
       [
         "expo-notifications",

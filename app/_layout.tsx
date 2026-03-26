@@ -2,15 +2,23 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen'; // 1. Import library splash screen
 import { getUser } from '@/utils/storage';
 import { Colors } from '@/constants/theme';
 
-// Context so child screens (e.g. ready.tsx) can tell the root layout
-// that onboarding is finished without a full AsyncStorage round-trip.
+// Mencegah Splash Screen tertutup otomatis agar kita bisa kontrol durasinya
+SplashScreen.preventAutoHideAsync();
+
 interface AppContextType {
   completeOnboarding: () => void;
+  resetOnboarding: () => void; 
 }
-const AppContext = createContext<AppContextType>({ completeOnboarding: () => {} });
+
+const AppContext = createContext<AppContextType>({ 
+  completeOnboarding: () => {},
+  resetOnboarding: () => {} 
+});
+
 export const useAppContext = () => useContext(AppContext);
 
 export default function RootLayout() {
@@ -19,10 +27,30 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
 
+  // Inisialisasi data dan pengaturan Splash Screen
   useEffect(() => {
-    checkOnboardingStatus();
+    async function prepare() {
+      try {
+        // Cek status user dari storage
+        const user = await getUser();
+        setIsOnboarded(!!user?.onboarded);
+        
+        // BERI JEDA: Menahan splash screen selama 2 detik agar estetikanya terlihat
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+      } catch (e) {
+        console.warn("Gagal memuat status onboarding:", e);
+      } finally {
+        // Tandai aplikasi siap dan sembunyikan Splash Screen
+        setIsReady(true);
+        await SplashScreen.hideAsync();
+      }
+    }
+
+    prepare();
   }, []);
 
+  // Penjaga Pintu Navigasi
   useEffect(() => {
     if (!isReady) return;
 
@@ -35,17 +63,15 @@ export default function RootLayout() {
     }
   }, [isReady, isOnboarded, segments]);
 
-  async function checkOnboardingStatus() {
-    const user = await getUser();
-    setIsOnboarded(!!user?.onboarded);
-    setIsReady(true);
-  }
-
-  // Called by the ready screen after saving the user profile
   const completeOnboarding = useCallback(() => {
     setIsOnboarded(true);
   }, []);
 
+  const resetOnboarding = useCallback(() => {
+    setIsOnboarded(false);
+  }, []);
+
+  // Tampilan fallback (Loading Spinner) jika splash screen sudah hilang tapi navigasi belum selesai
   if (!isReady) {
     return (
       <View style={styles.loader}>
@@ -56,7 +82,7 @@ export default function RootLayout() {
   }
 
   return (
-    <AppContext.Provider value={{ completeOnboarding }}>
+    <AppContext.Provider value={{ completeOnboarding, resetOnboarding }}>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{

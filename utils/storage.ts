@@ -85,3 +85,23 @@ export async function deleteTask(id: string): Promise<Task[]> {
 export async function clearAllData(): Promise<void> {
   await AsyncStorage.multiRemove([USER_KEY, TASKS_KEY]);
 }
+
+// ---- Logika Logout Terintegrasi ----
+
+export async function logoutLocal() {
+  try {
+    // 1. Ambil data user yang ada
+    const existing = await getUser();
+    
+    // 2. Reset status user (Onboarded jadi false dan kosongkan nama)
+    if (existing) {
+      await saveUser({ ...existing, onboarded: false, name: '', level: '' });
+    }
+
+    // 3. Hapus seluruh daftar tugas agar dashboard bersih (Penting!)
+    await AsyncStorage.removeItem(TASKS_KEY);
+
+  } catch (error) {
+    console.error('Gagal melakukan logout lokal:', error);
+  }
+}

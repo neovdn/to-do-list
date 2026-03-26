@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Animated, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,53 @@ const LEVELS = [
   { id: 'SMK', label: 'SMK', emoji: '🔧', desc: 'Sekolah Menengah Kejuruan' },
   { id: 'Mahasiswa', label: 'Mahasiswa', emoji: '🏫', desc: 'Perguruan Tinggi' },
 ];
+
+// 1. Ekstraksi Komponen Card dengan Animasi
+const LevelCard = ({ level, isSelected, onPress }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Efek mengecil saat ditekan
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95, // Mengecil 5%
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // Efek kembali ke ukuran semula saat dilepas (memegas)
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 4, // Mengatur seberapa banyak pantulannya
+      tension: 40, // Mengatur kecepatan kembalinya
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.card,
+          isSelected && styles.cardSelected,
+        ]}
+      >
+        <View style={styles.cardLeft}>
+          <Text style={styles.cardEmoji}>{level.emoji}</Text>
+          <Text style={[styles.cardLabel, isSelected && styles.cardLabelSelected]}>
+            {level.label}
+          </Text>
+        </View>
+        <Text style={[styles.cardDesc, isSelected && styles.cardDescSelected]}>
+          {level.desc}
+        </Text>
+      </Pressable>
+    </Animated.View>
+  );
+};
 
 export default function LevelScreen() {
   const router = useRouter();
@@ -32,62 +79,45 @@ export default function LevelScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.iconContainer}>
-            <Text style={styles.emoji}>🏫</Text>
+          
+          {/* Header Area */}
+          <View style={styles.headerArea}>
+            <View style={styles.iconContainer}>
+              <Text style={styles.emoji}>🏫</Text>
+            </View>
+            <Text style={styles.title}>Jenjang Pendidikan</Text>
+            <Text style={styles.subtitle}>
+              Pilih jenjang pendidikanmu saat ini untuk menyesuaikan materi.
+            </Text>
           </View>
 
-          <Text style={styles.title}>Jenjang Pendidikan</Text>
-          <Text style={styles.subtitle}>
-            Pilih jenjang pendidikanmu saat ini
-          </Text>
-
-          {/* Level Cards */}
+          {/* Level Cards Grid */}
           <View style={styles.grid}>
             {LEVELS.map((level) => (
-              <TouchableOpacity
+              <LevelCard
                 key={level.id}
-                style={[
-                  styles.card,
-                  selected === level.id && styles.cardSelected,
-                ]}
+                level={level}
+                isSelected={selected === level.id}
                 onPress={() => setSelected(level.id)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cardEmoji}>{level.emoji}</Text>
-                <Text
-                  style={[
-                    styles.cardLabel,
-                    selected === level.id && styles.cardLabelSelected,
-                  ]}
-                >
-                  {level.label}
-                </Text>
-                <Text
-                  style={[
-                    styles.cardDesc,
-                    selected === level.id && styles.cardDescSelected,
-                  ]}
-                >
-                  {level.desc}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </View>
         </View>
       </ScrollView>
 
-      {/* CTA */}
+      {/* CTA Area */}
       <View style={styles.bottom}>
-        <TouchableOpacity
-          style={[styles.primaryBtn, !selected && styles.primaryBtnDisabled]}
+        <Pressable
+          style={({ pressed }) => [
+            styles.primaryBtn,
+            !selected && styles.primaryBtnDisabled,
+            pressed && selected && { opacity: 0.85, transform: [{ scale: 0.98 }] }
+          ]}
           onPress={handleNext}
-          activeOpacity={0.85}
           disabled={!selected}
         >
           <Text style={styles.primaryBtnText}>Lanjutkan →</Text>
-        </TouchableOpacity>
-
+        </Pressable>
         <Text style={styles.hint}>Langkah 3 dari 4</Text>
       </View>
     </SafeAreaView>
@@ -104,64 +134,74 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    alignItems: 'center',
     paddingHorizontal: Spacing.xxl,
-    paddingTop: Spacing.huge,
+    paddingTop: Spacing.xl, // Sedikit dikurangi agar tidak terlalu jauh ke bawah
+  },
+  headerArea: {
+    alignItems: 'center',
+    marginBottom: Spacing.xxl,
   },
   iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80, // Dikecilkan sedikit agar lebih proporsional
+    height: 80,
+    borderRadius: 40,
     backgroundColor: Colors.skySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.xxl,
-    ...Shadows.md,
+    marginBottom: Spacing.xl,
+    ...Shadows.sm,
   },
   emoji: {
-    fontSize: 48,
+    fontSize: 40,
   },
   title: {
     fontSize: FontSize.xxxl,
     fontWeight: '800',
     color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
     textAlign: 'center',
+    letterSpacing: -0.5, // Memberikan kesan tipografi yang lebih rapat dan modern
   },
   subtitle: {
     fontSize: FontSize.md,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: Spacing.xxxl,
+    lineHeight: 24,
+    paddingHorizontal: Spacing.md,
   },
   grid: {
     width: '100%',
     gap: Spacing.md,
+    paddingBottom: Spacing.xxl, // Memberi ruang ekstra di bawah saat di-scroll
   },
   card: {
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl, // Dibuat lebih membulat (xl) agar lebih soft
     padding: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2,
+    justifyContent: 'space-between', // Memisahkan emoji/label dengan deskripsi
+    borderWidth: 1.5, // Dibuat 1.5 agar tidak terlalu tebal/kasar
     borderColor: Colors.border,
     ...Shadows.sm,
   },
   cardSelected: {
     backgroundColor: Colors.primarySoft,
     borderColor: Colors.primary,
+    ...Shadows.md, // Shadow lebih tebal saat dipilih agar seolah 'mengambang'
+  },
+  cardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   cardEmoji: {
-    fontSize: 28,
+    fontSize: 26,
     marginRight: Spacing.md,
   },
   cardLabel: {
     fontSize: FontSize.lg,
     fontWeight: '700',
     color: Colors.textPrimary,
-    marginRight: Spacing.sm,
   },
   cardLabelSelected: {
     color: Colors.primary,
@@ -169,16 +209,16 @@ const styles = StyleSheet.create({
   cardDesc: {
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
-    flex: 1,
+    fontWeight: '500',
   },
   cardDescSelected: {
     color: Colors.primaryDark,
   },
   bottom: {
     paddingHorizontal: Spacing.xxl,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: Spacing.xxxl, // Menambah area bawah aman untuk HP modern (notch/home bar)
     paddingTop: Spacing.md,
-    alignItems: 'center',
+    backgroundColor: Colors.background, // Memastikan background solid jika tertumpuk scroll
   },
   primaryBtn: {
     backgroundColor: Colors.primary,
@@ -190,8 +230,9 @@ const styles = StyleSheet.create({
     ...Shadows.md,
   },
   primaryBtnDisabled: {
-    backgroundColor: Colors.primaryLight,
-    opacity: 0.6,
+    backgroundColor: Colors.border, // Pakai warna border/abu-abu agar jelas tidak bisa diklik
+    opacity: 1,
+    ...Shadows.none, // Hilangkan bayangan saat nonaktif
   },
   primaryBtnText: {
     color: Colors.white,
@@ -202,5 +243,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     fontSize: FontSize.sm,
     color: Colors.textMuted,
+    textAlign: 'center',
   },
 });

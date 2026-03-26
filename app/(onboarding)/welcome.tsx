@@ -1,60 +1,105 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// Ekstraksi komponen fitur agar lebih rapi
+const FeatureItem = ({ icon, text, delay }) => {
+  const slideAnim = useRef(new Animated.Value(20)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        delay: delay, // Waktu tunda kemunculan
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        delay: delay,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View style={[styles.featureItem, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      <Text style={styles.featureIcon}>{icon}</Text>
+      <Text style={styles.featureText}>{text}</Text>
+    </Animated.View>
+  );
+};
+
 export default function WelcomeScreen() {
   const router = useRouter();
+  
+  // Animasi untuk elemen utama (Header)
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerScale = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(headerOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(headerScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Hero Illustration */}
-        <View style={styles.iconContainer}>
-          <Text style={styles.heroEmoji}>📚</Text>
-        </View>
+        
+        {/* Header Section dengan Animasi Fade & Scale */}
+        <Animated.View style={[styles.headerSection, { opacity: headerOpacity, transform: [{ scale: headerScale }] }]}>
+          <View style={styles.iconContainer}>
+            <Text style={styles.heroEmoji}>📚</Text>
+          </View>
 
-        {/* App Logo */}
-        <Text style={styles.appName}>TugasKu</Text>
-        <View style={styles.divider} />
+          <Text style={styles.appName}>TugasKu</Text>
+          <View style={styles.divider} />
 
-        {/* Tagline */}
-        <Text style={styles.tagline}>
-          Catat semua tugas sekolahmu{'\n'}dengan mudah! ✨
-        </Text>
+          <Text style={styles.tagline}>
+            Catat semua tugas sekolahmu{'\n'}dengan mudah! ✨
+          </Text>
 
-        <Text style={styles.subtitle}>
-          Atur jadwal, pantau progres, dan jangan pernah{'\n'}
-          lupa mengerjakan tugas lagi.
-        </Text>
+          <Text style={styles.subtitle}>
+            Atur jadwal, pantau progres, dan jangan pernah{'\n'}
+            lupa mengerjakan tugas lagi.
+          </Text>
+        </Animated.View>
 
-        {/* Features */}
+        {/* Features Section dengan Staggered Animation */}
         <View style={styles.features}>
-          <View style={styles.featureItem}>
-            <Text style={styles.featureIcon}>📝</Text>
-            <Text style={styles.featureText}>Catat tugas mudah</Text>
-          </View>
-          <View style={styles.featureItem}>
-            <Text style={styles.featureIcon}>🔔</Text>
-            <Text style={styles.featureText}>Pengingat otomatis</Text>
-          </View>
-          <View style={styles.featureItem}>
-            <Text style={styles.featureIcon}>✅</Text>
-            <Text style={styles.featureText}>Pantau progres belajar</Text>
-          </View>
+          <FeatureItem icon="📝" text="Catat tugas dengan mudah" delay={300} />
+          <FeatureItem icon="🔔" text="Pengingat waktu otomatis" delay={500} />
+          <FeatureItem icon="✅" text="Pantau progres belajarmu" delay={700} />
         </View>
+
       </View>
 
-      {/* CTA */}
+      {/* CTA Area */}
       <View style={styles.bottom}>
-        <TouchableOpacity
-          style={styles.primaryBtn}
+        <Pressable
+          style={({ pressed }) => [
+            styles.primaryBtn,
+            pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }
+          ]}
           onPress={() => router.push('/(onboarding)/name')}
-          activeOpacity={0.85}
         >
-          <Text style={styles.primaryBtnText}>Lanjutkan →</Text>
-        </TouchableOpacity>
+          <Text style={styles.primaryBtnText}>Mulai Perjalanan →</Text>
+        </Pressable>
 
         <Text style={styles.hint}>Langkah 1 dari 4</Text>
       </View>
@@ -73,73 +118,82 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacing.xxl,
   },
+  headerSection: {
+    alignItems: 'center',
+    width: '100%',
+  },
   iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100, // Disamakan ukurannya dengan halaman lain
+    height: 100,
+    borderRadius: 50,
     backgroundColor: Colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.xxl,
-    ...Shadows.lg,
+    marginBottom: Spacing.xl, // Sedikit dikurangi agar proporsional
+    ...Shadows.md,
   },
   heroEmoji: {
-    fontSize: 56,
+    fontSize: 48, // Disesuaikan dengan wadahnya
   },
   appName: {
     fontSize: FontSize.hero,
-    fontWeight: '800',
+    fontWeight: '900', // Ditebalkan sedikit untuk kesan logo
     color: Colors.primary,
-    letterSpacing: -1,
+    letterSpacing: -1.5, // Lebih rapat agar terlihat bold
     marginBottom: Spacing.sm,
   },
   divider: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
+    width: 50,
+    height: 5,
+    borderRadius: 3,
     backgroundColor: Colors.coral,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   tagline: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
-    lineHeight: 28,
+    lineHeight: 30,
     marginBottom: Spacing.md,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: FontSize.md,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 24,
     marginBottom: Spacing.xxxl,
+    paddingHorizontal: Spacing.md,
   },
   features: {
     gap: Spacing.md,
+    width: '100%', // Memastikan kotak fitur meregang dengan baik
+    maxWidth: 300, // Membatasi lebar agar tidak terlalu panjang di layar tablet/besar
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.white,
     paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.xl, // Dibuat lebih membulat
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
     ...Shadows.sm,
-    minWidth: 240,
   },
   featureIcon: {
-    fontSize: 20,
+    fontSize: 22,
     marginRight: Spacing.md,
   },
   featureText: {
     fontSize: FontSize.md,
     color: Colors.textPrimary,
-    fontWeight: '500',
+    fontWeight: '600', // Ditebalkan sedikit agar lebih terbaca
   },
   bottom: {
     paddingHorizontal: Spacing.xxl,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: Spacing.xxxl, // Ruang aman bawah (Notch)
     alignItems: 'center',
   },
   primaryBtn: {
