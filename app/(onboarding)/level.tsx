@@ -14,7 +14,7 @@ const LEVELS = [
 ];
 
 // 1. Ekstraksi Komponen Card dengan Animasi
-const LevelCard = ({ level, isSelected, onPress }) => {
+const LevelCard = ({ level, isSelected, onPress }: { level: { id: string, label: string, emoji: string, desc: string }, isSelected: boolean, onPress: () => void }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   // Efek mengecil saat ditekan
@@ -48,13 +48,15 @@ const LevelCard = ({ level, isSelected, onPress }) => {
       >
         <View style={styles.cardLeft}>
           <Text style={styles.cardEmoji}>{level.emoji}</Text>
-          <Text style={[styles.cardLabel, isSelected && styles.cardLabelSelected]}>
-            {level.label}
-          </Text>
+          <View style={styles.cardTextContainer}>
+            <Text style={[styles.cardLabel, isSelected && styles.cardLabelSelected]}>
+              {level.label}
+            </Text>
+            <Text style={[styles.cardDesc, isSelected && styles.cardDescSelected]} numberOfLines={2}>
+              {level.desc}
+            </Text>
+          </View>
         </View>
-        <Text style={[styles.cardDesc, isSelected && styles.cardDescSelected]}>
-          {level.desc}
-        </Text>
       </Pressable>
     </Animated.View>
   );
@@ -133,9 +135,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: Spacing.xxl,
-    paddingTop: Spacing.xl, // Sedikit dikurangi agar tidak terlalu jauh ke bawah
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.md,
   },
   headerArea: {
     alignItems: 'center',
@@ -176,12 +179,11 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl, // Dibuat lebih membulat (xl) agar lebih soft
+    borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between', // Memisahkan emoji/label dengan deskripsi
-    borderWidth: 1.5, // Dibuat 1.5 agar tidak terlalu tebal/kasar
+    borderWidth: 1.5,
     borderColor: Colors.border,
     ...Shadows.sm,
   },
@@ -193,15 +195,21 @@ const styles = StyleSheet.create({
   cardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   cardEmoji: {
-    fontSize: 26,
+    fontSize: 32, // Sedikit diperbesar agar pas dengan stacked text
     marginRight: Spacing.md,
+  },
+  cardTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
   cardLabel: {
     fontSize: FontSize.lg,
     fontWeight: '700',
     color: Colors.textPrimary,
+    marginBottom: 2, // Spasi kecil antara label dan desc
   },
   cardLabelSelected: {
     color: Colors.primary,
@@ -210,6 +218,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
     fontWeight: '500',
+    flexWrap: 'wrap',
   },
   cardDescSelected: {
     color: Colors.primaryDark,

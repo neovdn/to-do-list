@@ -2,14 +2,14 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
-// Hapus import expo-splash-screen karena kita pakai cara manual
-// import * as SplashScreen from 'expo-splash-screen'; 
+import * as SplashScreen from 'expo-splash-screen'; 
 import { getUser } from '@/utils/storage';
 import { Colors } from '@/constants/theme';
-// Import FakeSplashScreen yang baru kita buat
-import FakeSplashScreen from '@/components/FakeSplashScreen'; 
 import { LogBox } from 'react-native';
 LogBox.ignoreLogs(['expo-notifications']);
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 interface AppContextType {
   completeOnboarding: () => void;
@@ -37,13 +37,12 @@ export default function RootLayout() {
         const user = await getUser();
         setIsOnboarded(!!user?.onboarded);
         
-        // BERI JEDA: Kita tahan Fake Splash selama 3 detik
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // We no longer need the artificial 3-second delay, but testing with 1.5s purely for aesthetic transition
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
       } catch (e) {
         console.warn("Gagal memuat data:", e);
       } finally {
-        // Tandai aplikasi siap, Fake Splash akan hilang otomatis
         setIsReady(true);
       }
     }
@@ -62,6 +61,11 @@ export default function RootLayout() {
     } else if (isOnboarded && inOnboarding) {
       router.replace('/(tabs)');
     }
+
+    // Hide splash screen after navigation state has been set up
+    setTimeout(async () => {
+      await SplashScreen.hideAsync();
+    }, 100);
   }, [isReady, isOnboarded, segments]);
 
   const completeOnboarding = useCallback(() => {
@@ -90,9 +94,6 @@ export default function RootLayout() {
           <Stack.Screen name="(onboarding)" />
           <Stack.Screen name="(tabs)" />
         </Stack>
-
-        {/* Tampilkan Fake SplashScreen DI ATAS Stack jika belum ready */}
-        {!isReady && <FakeSplashScreen />}
       </View>
     </AppContext.Provider>
   );

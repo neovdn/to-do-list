@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Ekstraksi komponen fitur agar lebih rapi
-const FeatureItem = ({ icon, text, delay }) => {
+const FeatureItem = ({ icon, text, delay }: { icon: string, text: string, delay: number }) => {
   const slideAnim = useRef(new Animated.Value(20)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -59,35 +59,41 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        
-        {/* Header Section dengan Animasi Fade & Scale */}
-        <Animated.View style={[styles.headerSection, { opacity: headerOpacity, transform: [{ scale: headerScale }] }]}>
-          <View style={styles.iconContainer}>
-            <Text style={styles.heroEmoji}>📚</Text>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <View style={styles.content}>
+          
+          {/* Header Section dengan Animasi Fade & Scale */}
+          <Animated.View style={[styles.headerSection, { opacity: headerOpacity, transform: [{ scale: headerScale }] }]}>
+            <View style={styles.iconContainer}>
+              <Text style={styles.heroEmoji}>📚</Text>
+            </View>
+
+            <Text style={styles.appName}>TugasKu</Text>
+            <View style={styles.divider} />
+
+            <Text style={styles.tagline}>
+              Catat semua tugas sekolahmu{'\n'}dengan mudah! ✨
+            </Text>
+
+            <Text style={styles.subtitle}>
+              Atur jadwal, pantau progres, dan jangan pernah{'\n'}
+              lupa mengerjakan tugas lagi.
+            </Text>
+          </Animated.View>
+
+          {/* Features Section dengan Staggered Animation */}
+          <View style={styles.features}>
+            <FeatureItem icon="📝" text="Catat tugas dengan mudah" delay={300} />
+            <FeatureItem icon="🔔" text="Pengingat waktu otomatis" delay={500} />
+            <FeatureItem icon="✅" text="Pantau progres belajarmu" delay={700} />
           </View>
 
-          <Text style={styles.appName}>TugasKu</Text>
-          <View style={styles.divider} />
-
-          <Text style={styles.tagline}>
-            Catat semua tugas sekolahmu{'\n'}dengan mudah! ✨
-          </Text>
-
-          <Text style={styles.subtitle}>
-            Atur jadwal, pantau progres, dan jangan pernah{'\n'}
-            lupa mengerjakan tugas lagi.
-          </Text>
-        </Animated.View>
-
-        {/* Features Section dengan Staggered Animation */}
-        <View style={styles.features}>
-          <FeatureItem icon="📝" text="Catat tugas dengan mudah" delay={300} />
-          <FeatureItem icon="🔔" text="Pengingat waktu otomatis" delay={500} />
-          <FeatureItem icon="✅" text="Pantau progres belajarmu" delay={700} />
         </View>
-
-      </View>
+      </ScrollView>
 
       {/* CTA Area */}
       <View style={styles.bottom}>
@@ -112,11 +118,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   content: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.xxl,
+    paddingVertical: Spacing.xl,
   },
   headerSection: {
     alignItems: 'center',
